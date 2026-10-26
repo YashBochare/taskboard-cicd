@@ -33,6 +33,14 @@ function createApp() {
 
   app.get('/api/tasks', (req, res) => res.json(tasks));
 
+  // Progress summary shown at the top of the board.
+  app.get('/api/summary', (req, res) => {
+    const total = tasks.length;
+    const done = tasks.filter((t) => t.done).length;
+    const percent = total === 0 ? 0 : Math.round(done / total);
+    res.json({ total, done, percent });
+  });
+
   app.post('/api/tasks', (req, res) => {
     const title = typeof req.body?.title === 'string' ? req.body.title.trim() : '';
     if (!title) return res.status(400).json({ error: 'title is required' });

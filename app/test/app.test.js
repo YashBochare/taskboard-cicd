@@ -76,3 +76,12 @@ test('TC-09 serves the web UI', async () => {
   assert.equal(res.status, 200);
   assert.match(await res.text(), /TaskBoard/);
 });
+
+test('TC-10 summary reports progress as a percentage', async () => {
+  const tasks = await (await fetch(`${base}/api/tasks`)).json();
+  const done = tasks.filter((t) => t.done).length;
+  const summary = await (await fetch(`${base}/api/summary`)).json();
+  assert.equal(summary.total, tasks.length);
+  assert.equal(summary.done, done);
+  assert.equal(summary.percent, Math.round((done / tasks.length) * 100));
+});

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TaskBoard</title>
   <style>
-    :root { --bg:#f4f6fb; --card:#fff; --ink:#1d2433; --muted:#667085; --accent:#2f6fed; --ok:#12805c; }
+    :root { --bg:#f4f6fb; --card:#fff; --ink:#1d2433; --muted:#667085; --accent:#12805c; --ok:#12805c; }
     * { box-sizing: border-box; }
     body { margin:0; font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--ink); }
     header { background:var(--accent); color:#fff; padding:24px 16px; }
@@ -27,7 +27,7 @@
 <body>
   <header>
     <h1>TaskBoard</h1>
-    <p>Deployed automatically by Jenkins CI/CD to AWS</p>
+    <p>Deployed automatically by Jenkins CI/CD to AWS · now with progress tracking</p>
   </header>
   <main>
     <section class="card">
@@ -36,6 +36,10 @@
     </section>
     <section class="card">
       <h2 style="margin-top:0">Tasks</h2>
+      <p id="summary" style="margin:0 0 8px;color:var(--muted)"></p>
+      <div style="background:#e4e7ec;border-radius:999px;height:10px;overflow:hidden">
+        <div id="bar" style="background:var(--accent);height:100%;width:0;transition:width .3s"></div>
+      </div>
       <ul id="tasks"></ul>
       <form id="add">
         <input type="text" id="title" placeholder="Add a task" maxlength="100" required>
@@ -55,6 +59,9 @@
     }
     async function loadTasks() {
       const tasks = await (await fetch('/api/tasks')).json();
+      const s = await (await fetch('/api/summary')).json();
+      document.getElementById('summary').textContent = `${s.done} of ${s.total} tasks complete (${s.percent}%)`;
+      document.getElementById('bar').style.width = `${s.percent}%`;
       const ul = document.getElementById('tasks');
       ul.innerHTML = '';
       for (const t of tasks) {
