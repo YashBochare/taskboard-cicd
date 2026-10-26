@@ -54,3 +54,18 @@ jobs:
           }
         }
       }
+  - script: >
+      pipelineJob('quickbite-capstone') {
+        description('QuickBite capstone: test, containerise, push to ECR and deploy to ECS via CloudFormation on every push.')
+        properties {
+          githubProjectUrl('https://github.com/YashBochare/quickbite-capstone')
+          pipelineTriggers { triggers { githubPush() } }
+        }
+        definition {
+          cpsScm {
+            scm { git { remote { url('https://github.com/YashBochare/quickbite-capstone.git') }; branch('*/main') } }
+            scriptPath('Jenkinsfile')
+            lightweight(true)
+          }
+        }
+      }
