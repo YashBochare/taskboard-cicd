@@ -37,7 +37,7 @@ function createApp() {
   app.get('/api/summary', (req, res) => {
     const total = tasks.length;
     const done = tasks.filter((t) => t.done).length;
-    const percent = total === 0 ? 0 : Math.round(done / total);
+    const percent = total === 0 ? 0 : Math.round((done / total) * 100);
     res.json({ total, done, percent });
   });
 
