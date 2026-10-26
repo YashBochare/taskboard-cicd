@@ -1,0 +1,56 @@
+# Jenkins Configuration-as-Code: the whole controller (security, environment, job)
+# is defined here, so a replacement server is configured identically on first boot.
+# Values in ${...} are passed in as container environment variables by infra/jenkins-userdata.sh.
+jenkins:
+  systemMessage: "TaskBoard CI/CD - Jenkins on Amazon EC2 (configured as code)"
+  numExecutors: 2
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: true
+  globalNodeProperties:
+    - envVars:
+        env:
+          - key: AWS_REGION
+            value: "${AWS_REGION}"
+          - key: ECR_REGISTRY
+            value: "${ECR_REGISTRY}"
+          - key: APP_INSTANCE_ID
+            value: "${APP_INSTANCE_ID}"
+          - key: APP_PRIVATE_IP
+            value: "${APP_PRIVATE_IP}"
+
+unclassified:
+  location:
+    url: "${JENKINS_URL}"
+
+jobs:
+  - script: >
+      pipelineJob('taskboard-cicd') {
+        description('Builds, tests, containerises and deploys TaskBoard to AWS on every push to main.')
+        properties {
+          githubProjectUrl('${REPO_URL}')
+          pipelineTriggers {
+            triggers {
+              githubPush()
+            }
+          }
+        }
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('${REPO_URL}.git') }
+                branch('*/main')
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(true)
+          }
+        }
+      }

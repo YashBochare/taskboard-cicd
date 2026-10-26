@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TaskBoard</title>
+  <style>
+    :root { --bg:#f4f6fb; --card:#fff; --ink:#1d2433; --muted:#667085; --accent:#2f6fed; --ok:#12805c; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--ink); }
+    header { background:var(--accent); color:#fff; padding:24px 16px; }
+    header h1 { margin:0; font-size:28px; }
+    header p { margin:4px 0 0; opacity:.9; }
+    main { max-width:720px; margin:24px auto; padding:0 16px; }
+    .card { background:var(--card); border-radius:12px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,.08); margin-bottom:16px; }
+    .meta { display:flex; flex-wrap:wrap; gap:8px; }
+    .pill { background:#eef2ff; color:#3538cd; border-radius:999px; padding:4px 12px; font-size:14px; font-weight:600; }
+    ul { list-style:none; margin:0; padding:0; }
+    li { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #eee; }
+    li.done span { color:var(--muted); text-decoration:line-through; }
+    form { display:flex; gap:8px; margin-top:12px; }
+    input[type=text] { flex:1; padding:10px; border:1px solid #d0d5dd; border-radius:8px; font:inherit; }
+    button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:10px 16px; font:inherit; cursor:pointer; }
+    footer { text-align:center; color:var(--muted); font-size:14px; padding:16px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TaskBoard</h1>
+    <p>Deployed automatically by Jenkins CI/CD to AWS</p>
+  </header>
+  <main>
+    <section class="card">
+      <h2 style="margin-top:0">Deployment</h2>
+      <div class="meta" id="meta"><span class="pill">loading…</span></div>
+    </section>
+    <section class="card">
+      <h2 style="margin-top:0">Tasks</h2>
+      <ul id="tasks"></ul>
+      <form id="add">
+        <input type="text" id="title" placeholder="Add a task" maxlength="100" required>
+        <button type="submit">Add</button>
+      </form>
+    </section>
+  </main>
+  <footer>Experiment 4 · Integrated CI/CD Pipeline</footer>
+  <script>
+    async function loadInfo() {
+      const i = await (await fetch('/api/info')).json();
+      document.getElementById('meta').innerHTML =
+        `<span class="pill">Version ${i.version}</span>` +
+        `<span class="pill">Build #${i.build}</span>` +
+        `<span class="pill">Commit ${i.commit}</span>` +
+        (i.deployedAt ? `<span class="pill">Deployed ${new Date(i.deployedAt).toLocaleString()}</span>` : '');
+    }
+    async function loadTasks() {
+      const tasks = await (await fetch('/api/tasks')).json();
+      const ul = document.getElementById('tasks');
+      ul.innerHTML = '';
+      for (const t of tasks) {
+        const li = document.createElement('li');
+        if (t.done) li.className = 'done';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.checked = t.done;
+        cb.onchange = async () => {
+          await fetch(`/api/tasks/${t.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ done: cb.checked }) });
+          loadTasks();
+        };
+        const span = document.createElement('span');
+        span.textContent = t.title;
+        li.append(cb, span);
+        ul.append(li);
+      }
+    }
+    document.getElementById('add').onsubmit = async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('title');
+      await fetch('/api/tasks', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title: input.value }) });
+      input.value = '';
+      loadTasks();
+    };
+    loadInfo(); loadTasks();
+  </script>
+</body>
+</html>

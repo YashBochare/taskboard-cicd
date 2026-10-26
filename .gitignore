@@ -1,0 +1,6 @@
+node_modules/
+app/test-results.xml
+infra/outputs.env
+docs/screenshots/raw/
+*.log
+.DS_Store
